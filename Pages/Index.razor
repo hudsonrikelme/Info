@@ -1,0 +1,153 @@
+﻿@page "/"
+@inject NavigationManager NavigationManager
+@inject ProdutoServices service
+@inject IJSRuntime JSRuntime
+
+<h1>InfoTech Store</h1>
+<div class="container">
+
+    <div class="row bg-light">
+        <table class="table table-bordered">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Id</th>
+                    <th>Nome</th>
+                    <th>Preço</th>
+                    <th>Quantidade</th>
+                    <th>Descrição</th>
+
+                </tr>
+            </thead>
+            <tbody>
+                @if (Produtos.Any())
+                {
+                    @foreach (var prod in Produtos)
+                    {
+                        <tr>
+                            <td>@prod.Id</td>
+                            <td>@prod.Nome</td>
+                            <td>@prod.Preço</td>
+                            <td>@prod.Quant</td>
+                            <td>@prod.Descr</td>
+                            <td><button class="btn btn-primary" @onclick="() => EditarProduto(prod)">Editar</button>
+                                <button class="btn btn-danger" @onclick="() => ApagaProduto(prod)">Deletar</button>
+                            </td>
+                        </tr>
+                    }
+                    @if (showNotification)
+                    {
+                        <div class="alert alert-success" role="alert">
+                            @notificationMessage
+                        </div>
+                    }
+                    @if (exibindoFormularioEdicao)
+                    {
+                        <br>
+                        <div class="bg-light m-2 justify-content-start">
+                            <div class="form-group">
+                                <label for="nome">Nome:</label>
+                                <input type="text" class="form-control" id="edit_nome" @bind="produtoEmEdicao.Nome" />
+                            </div>
+                            <div class="form-group">
+                                <label for="editPreco">Preço:</label>
+                                <input type="number" class="form-control" id="editPreco" @bind="produtoEmEdicao.Preço" />
+                            </div>
+                            <div class="form-group">
+                                <label for="editQuantidade">Quantidade:</label>
+                                <input type="text" class="form-control" id="editQuantidade" @bind="produtoEmEdicao.Quant" />
+                            </div>
+                            <div class="form-group">
+                                <label for="editDescricao">Descrição:</label>
+                                <input type="text" class="form-control" id="editDescricao" @bind="produtoEmEdicao.Descr" />
+                            </div>
+                        </div>
+                        <br>
+                        <button class="btn btn-primary" @onclick="SalvarEdicao">Salvar Edição</button>
+                        <button class="btn btn-secondary" @onclick="CancelarEdicao">Cancelar</button>
+                        <br>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6"><strong>Nenhum produto disponível</strong></td>
+                    </tr>
+                }
+                <br>
+                <button class="btn btn-primary" @onclick="NavegarParaAdicionarProduto">Adicionar Produto</button>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+@code {
+
+    List<Produto> Produtos = new List<Produto>();
+
+    private bool showNotification = false;
+    private string notificationMessage = "";
+    private Produto produtoEmEdicao = new Produto();
+    private bool exibindoFormularioEdicao = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AtualizaProdutos();
+    }
+
+    private async Task AtualizaProdutos()
+    {
+        Produtos = await service.RetornaProdutoAsync();
+    }
+
+
+    private void EditarProduto(Produto prod)
+    {
+        produtoEmEdicao = prod;
+        exibindoFormularioEdicao = true;
+    }
+
+
+
+    private async Task SalvarEdicao()
+    {
+        await service.UpdateProductAsync(produtoEmEdicao);
+
+
+        showNotification = true;
+        notificationMessage = $"Produto {produtoEmEdicao.Nome} editado com sucesso!";
+
+        await Task.Delay(2000);
+
+        await AtualizaProdutos();
+        
+        showNotification = false;
+        exibindoFormularioEdicao = false;
+
+    }
+    private void CancelarEdicao()
+    {
+        exibindoFormularioEdicao = false;
+    }
+
+    private async Task ApagaProduto(Produto prod)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", "Deletar produto " + prod.Nome + "?"))
+        {
+            await service.DeleteProductAsync(prod);
+            await AtualizaProdutos();
+
+            await Task.Delay(500);
+            // Notificação de sucesso usando window.alert()
+            await JSRuntime.InvokeVoidAsync("alert", $"Produto {prod.Nome} apagado com sucesso!");
+
+        }
+
+    }
+
+    private void NavegarParaAdicionarProduto()
+    {
+        NavigationManager.NavigateTo("/AdicionarProduto");
+    }
+
+}

@@ -1,0 +1,61 @@
+@page "/AdicionarProduto"
+
+@inject ProdutoServices service
+@inject NavigationManager NavigationManager
+
+@using info_app.Data;
+
+<h1>Adicionar Produto</h1>
+
+
+<div class="col-5 bg-light m-2 justify-content-start">
+    <div class="form-group">
+        <label for="nome">Nome:</label>
+        <input type="text" class="form-control" id="nome" @bind="produto.Nome"/>
+    </div>
+    <div class="form-group">
+        <label for="preco">Preço:</label>
+        <input type="number" class="form-control" id="preco" @bind="produto.Preço"/>
+    </div>
+    <div class="form-group">
+        <label for="quantidade">Quantidade:</label>
+        <input type="text" class="form-control" id="quantidade" @bind="produto.Quant"/>
+    </div>
+    <div class="form-group">
+        <label for="descricao">Descrição:</label>
+        <input type="text" class="form-control" id="descricao" @bind="produto.Descr"/>
+    </div>
+    <br>
+    @if (mostrarMensagemErro)
+    {
+        <div class="alert alert-danger" role="alert">
+            Por favor, preencha todos os campos para adicionar o produto!
+        </div>
+    }
+
+    <button class="btn btn-primary" @onclick="AdicionarNovoProduto">Salvar Produto</button>
+    <button class="btn btn-back" @onclick="NavegarParaIndex">Voltar</button>
+</div>
+
+
+    @code {
+        //Propriedade do Produto a serem adicionados
+        private Produto produto = new Produto();
+        private bool mostrarMensagemErro = false;
+        private async Task AdicionarNovoProduto()
+        {
+            mostrarMensagemErro = false;
+            if (string.IsNullOrEmpty(produto.Nome) || produto.Preço <= 0 || produto.Quant < 0 || string.IsNullOrEmpty(produto.Descr))
+            {
+                mostrarMensagemErro = true;
+                return;
+            }
+            await service.AddProductAsync(produto);
+            // Após adicionar produto, volte para a página principal
+            NavigationManager.NavigateTo("/");
+        }
+        private void NavegarParaIndex()
+        {
+            NavigationManager.NavigateTo("/");
+        }
+}
